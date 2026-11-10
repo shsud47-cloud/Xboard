@@ -13,6 +13,7 @@ use App\Http\Controllers\V1\User\ServerController;
 use App\Http\Controllers\V1\User\StatController;
 use App\Http\Controllers\V1\User\TelegramController;
 use App\Http\Controllers\V1\User\TicketController;
+use App\Http\Controllers\V1\User\PasskeyController;
 use App\Http\Controllers\V1\User\UserController;
 use Illuminate\Contracts\Routing\Registrar;
 
@@ -36,6 +37,10 @@ class UserRoute
             $router->post('/getQuickLoginUrl', [UserController::class, 'getQuickLoginUrl']);
             $router->get('/getActiveSession', [UserController::class, 'getActiveSession']);
             $router->post('/removeActiveSession', [UserController::class, 'removeActiveSession']);
+            $router->get('/passkey', [PasskeyController::class, 'index']);
+            $router->post('/passkey/options', [PasskeyController::class, 'options']);
+            $router->post('/passkey/register', [PasskeyController::class, 'register']);
+            $router->post('/passkey/delete', [PasskeyController::class, 'delete']);
             // Order
             $router->post('/order/save', [OrderController::class, 'save']);
             $router->post('/order/checkout', [OrderController::class, 'checkout']);

@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Routes\V2;
 
+use App\Http\Controllers\V1\User\PasskeyController;
 use App\Http\Controllers\V1\User\UserController;
 use Illuminate\Contracts\Routing\Registrar;
 
@@ -15,6 +16,10 @@ class UserRoute
             // User
             $router->get('/resetSecurity', [UserController::class, 'resetSecurity']);
             $router->get('/info', [UserController::class, 'info']);
+            $router->get('/passkey', [PasskeyController::class, 'index']);
+            $router->post('/passkey/options', [PasskeyController::class, 'options']);
+            $router->post('/passkey/register', [PasskeyController::class, 'register']);
+            $router->post('/passkey/delete', [PasskeyController::class, 'delete']);
         });
     }
 }
