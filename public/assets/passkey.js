@@ -122,17 +122,17 @@
     style.id = 'xb-passkey-style';
     style.textContent = [
       '.xb-pk-btn{width:100%;margin-top:10px}',
-      '.xb-pk-hint{margin:8px 0 0;font-size:12px;line-height:1.5;color:#71717a;text-align:left}',
-      '#xb-passkey-host{position:fixed;z-index:60;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));max-width:480px;margin:0 auto;pointer-events:none}',
-      '#xb-passkey-host .xb-pk-card{pointer-events:auto;margin:0;padding:14px 14px 12px;border:1px solid #e4e4e7;border-radius:14px;background:#fff;color:#18181b;box-shadow:0 12px 40px rgba(0,0,0,.18)}',
-      'html.dark #xb-passkey-host .xb-pk-card,.dark #xb-passkey-host .xb-pk-card{background:#09090b;color:#fafafa;border-color:#27272a}',
+      '.xb-pk-hint{margin:8px 0 0;font-size:12px;line-height:1.5;color:#71717a;text-align:center}',
+      '.xb-pk-card{margin-top:24px;padding:16px;border:1px solid #e4e4e7;border-radius:12px;background:transparent;color:inherit}',
+      'html.dark .xb-pk-card,.dark .xb-pk-card{border-color:#3f3f46}',
+      '.xb-pk-card .xb-pk-hint{text-align:left}',
       '.xb-pk-card h3{margin:0 0 8px;font-size:15px;font-weight:650;line-height:1.3}',
       '.xb-pk-card b{font-size:14px}',
-      '#xb-passkey-host button.xb-pk-action{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;margin:10px 0 0;padding:0 16px;border-radius:10px;border:1px solid #18181b;background:#18181b;color:#fff;font:600 15px/1 inherit;letter-spacing:0;cursor:pointer;text-align:center}',
-      'html.dark #xb-passkey-host button.xb-pk-action,.dark #xb-passkey-host button.xb-pk-action{background:#fafafa;color:#09090b;border-color:#fafafa}',
-      '#xb-passkey-host button.xb-pk-action:disabled{opacity:.55;cursor:default}',
-      '#xb-passkey-host button.xb-pk-danger{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #fca5a5;background:#fff;color:#dc2626;font:600 13px/1 inherit;cursor:pointer;flex:0 0 auto}',
-      'html.dark #xb-passkey-host button.xb-pk-danger,.dark #xb-passkey-host button.xb-pk-danger{background:#18181b;color:#fca5a5;border-color:#7f1d1d}',
+      '.xb-pk-card button.xb-pk-action{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;margin:10px 0 0;padding:0 16px;border-radius:10px;border:1px solid #18181b;background:#18181b;color:#fff;font:600 15px/1 inherit;letter-spacing:0;cursor:pointer;text-align:center}',
+      'html.dark .xb-pk-card button.xb-pk-action,.dark .xb-pk-card button.xb-pk-action{background:#fafafa;color:#09090b;border-color:#fafafa}',
+      '.xb-pk-card button.xb-pk-action:disabled{opacity:.55;cursor:default}',
+      '.xb-pk-card button.xb-pk-danger{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #fca5a5;background:#fff;color:#dc2626;font:600 13px/1 inherit;cursor:pointer;flex:0 0 auto}',
+      'html.dark .xb-pk-card button.xb-pk-danger,.dark .xb-pk-card button.xb-pk-danger{background:#18181b;color:#fca5a5;border-color:#7f1d1d}',
       '.xb-pk-item{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dashed rgba(127,127,127,.35)}',
       '.xb-pk-err{color:#dc2626;font-size:13px;margin-top:8px}'
     ].join('');
@@ -314,39 +314,53 @@
     load().catch(function (e) { msg.textContent = e.message || '加载失败'; });
   }
 
-  function passkeyHost() {
-    var host = document.getElementById('xb-passkey-host');
-    if (host) return host;
-    host = el('div', { id: 'xb-passkey-host' });
-    document.body.appendChild(host);
-    return host;
+  function exactText(node, titles) {
+    if (!node || node.closest('[data-xb-passkey-manage]')) return false;
+    return titles.indexOf((node.textContent || '').trim()) >= 0;
   }
 
-  function reserveSpace(on) {
-    document.querySelectorAll('#root .overflow-auto.flex-1, #app').forEach(function (node) {
-      if (on) node.style.setProperty('padding-bottom', '230px', 'important');
-      else node.style.removeProperty('padding-bottom');
-    });
+  // The security page root is the div.space-y-6 that wraps the heading and the
+  // form. Appending after that form keeps the card in normal flow. Inserting
+  // before the heading (in the middle of React's children) makes the next
+  // render drop the category menu and the later fields.
+  function adminFormTail() {
+    var titles = ['安全设置', 'Security Settings'];
+    var headings = document.querySelectorAll('#root h3');
+    for (var i = 0; i < headings.length; i++) {
+      if (!exactText(headings[i], titles)) continue;
+      var header = headings[i].parentElement;
+      var page = header && header.parentElement;
+      if (!page || page.id === 'root' || page.querySelector('aside')) continue;
+      return page;
+    }
+    return null;
+  }
+
+  function memberFormTail() {
+    var titles = ['修改密码', 'Change Password'];
+    var nodes = document.querySelectorAll('#app h1, #app h2, #app h3, #app div, #app span');
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].childNodes.length > 3 || !exactText(nodes[i], titles)) continue;
+      var card = nodes[i].closest('.n-card');
+      var page = card && card.parentElement;
+      if (!page || page.id === 'app') continue;
+      return page;
+    }
+    return null;
   }
 
   function clearManager() {
-    var host = document.getElementById('xb-passkey-host');
-    if (host) host.remove();
-    document.body.classList.remove('xb-pk-open');
-    reserveSpace(false);
+    document.querySelectorAll('[data-xb-passkey-manage]').forEach(function (node) { node.remove(); });
   }
 
-  // Keep the card outside #root / #app. Those trees are owned by React and Vue;
-  // a node inserted before 「安全设置」 is rewritten on the next render and can drop
-  // the category menu and the rest of the security form.
-  function mountManager(token) {
-    if (document.querySelector('#xb-passkey-host [data-xb-passkey-manage]')) return;
+  function mountInline(container, token) {
+    if (!container) return;
+    var current = container.lastElementChild;
+    if (current && current.getAttribute && current.getAttribute('data-xb-passkey-manage') != null) return;
     ensureStyle();
-    var host = passkeyHost();
-    host.innerHTML = '';
+    clearManager();
     var box = el('div', { class: 'xb-pk-card', 'data-xb-passkey-manage': '1' });
-    host.appendChild(box);
-    document.body.classList.add('xb-pk-open');
+    container.appendChild(box);
     renderManager(box, token);
   }
 
@@ -359,10 +373,9 @@
       }
       if (routeIs('#/config/system/safe', '/config/system/safe')) {
         var token = readStored('Xboard_', localStorage);
-        if (token) {
-          mountManager(token);
-          reserveSpace(true);
-        } else clearManager();
+        var tail = token && adminFormTail();
+        if (tail) mountInline(tail, token);
+        else if (!token) clearManager();
       } else clearManager();
       return;
     }
@@ -372,10 +385,9 @@
     }
     if (routeIs('#/profile', '/profile')) {
       var userToken = readStored('Vue_Naive_', localStorage);
-      if (userToken) {
-        mountManager(userToken);
-        reserveSpace(true);
-      } else clearManager();
+      var profileTail = userToken && memberFormTail();
+      if (profileTail) mountInline(profileTail, userToken);
+      else if (!userToken) clearManager();
     } else clearManager();
   }
 

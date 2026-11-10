@@ -35,7 +35,7 @@
   </script>
   <div id="app"></div>
   {!! $theme_config['custom_html'] !!}
-  <script src="/assets/passkey.js?v=20261110b" defer></script>
+  <script src="/assets/passkey.js?v=20261110c" defer></script>
 </body>
 
 </html>
