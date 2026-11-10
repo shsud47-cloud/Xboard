@@ -47,13 +47,22 @@ COPY .docker /
 ARG CACHEBUST=1
 ARG REPO_URL=https://github.com/cedar2025/Xboard
 ARG BRANCH_NAME=master
+# USE_CONTEXT=1 builds the image from this checkout instead of cloning upstream.
+# Required for this private fork: docker build --build-arg USE_CONTEXT=1 -t xboard-passkey .
+ARG USE_CONTEXT=0
 
-RUN echo "Attempting to clone branch: ${BRANCH_NAME} from ${REPO_URL} with CACHEBUST: ${CACHEBUST}" && \
-    rm -rf ./* && \
-    rm -rf .git && \
-    git config --global --add safe.directory /www && \
-    git clone --depth 1 --branch ${BRANCH_NAME} ${REPO_URL} . && \
-    git submodule update --init --recursive --force
+COPY . /www
+
+RUN if [ "$USE_CONTEXT" = "1" ]; then \
+      echo "Building from build context (USE_CONTEXT=1, CACHEBUST=${CACHEBUST})"; \
+      rm -rf /www/.git; \
+    else \
+      echo "Attempting to clone branch: ${BRANCH_NAME} from ${REPO_URL} with CACHEBUST: ${CACHEBUST}" && \
+      find /www -mindepth 1 -maxdepth 1 -exec rm -rf {} + && \
+      git config --global --add safe.directory /www && \
+      git clone --depth 1 --branch ${BRANCH_NAME} ${REPO_URL} . && \
+      git submodule update --init --recursive --force; \
+    fi
 
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY .docker/caddy/Caddyfile /etc/caddy/Caddyfile

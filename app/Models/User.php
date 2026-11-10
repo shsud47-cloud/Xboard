@@ -180,6 +180,19 @@ class User extends Authenticatable
         return $this->hasMany(TrafficResetLog::class, 'user_id', 'id');
     }
 
+    public function passkeys(): HasMany
+    {
+        return $this->hasMany(WebAuthnCredential::class, 'user_id', 'id');
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            $user->passkeys()->delete();
+            WebAuthnChallenge::query()->where('user_id', $user->id)->delete();
+        });
+    }
+
     /**
      * 检查用户是否处于活跃状态
      */

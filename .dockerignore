@@ -15,7 +15,10 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 composer.phar
-composer.lock
+# composer.lock is required when the image is built with --build-arg USE_CONTEXT=1.
+!composer.lock
+.git
+.github
 yarn.lock
 docker-compose.yml
 .DS_Store
