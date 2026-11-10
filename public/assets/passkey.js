@@ -122,13 +122,18 @@
     style.id = 'xb-passkey-style';
     style.textContent = [
       '.xb-pk-btn{width:100%;margin-top:10px}',
-      '.xb-pk-hint{margin:8px 0 0;font-size:12px;line-height:1.5;color:#888;text-align:center}',
-      '.xb-pk-card{margin-top:16px;padding:16px;border:1px solid rgba(127,127,127,.28);border-radius:12px}',
-      '.xb-pk-card h3{margin:0 0 6px;font-size:16px}',
-      '.xb-pk-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}',
+      '.xb-pk-hint{margin:8px 0 0;font-size:12px;line-height:1.5;color:#71717a;text-align:left}',
+      '#xb-passkey-host{position:fixed;z-index:60;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));max-width:480px;margin:0 auto;pointer-events:none}',
+      '#xb-passkey-host .xb-pk-card{pointer-events:auto;margin:0;padding:14px 14px 12px;border:1px solid #e4e4e7;border-radius:14px;background:#fff;color:#18181b;box-shadow:0 12px 40px rgba(0,0,0,.18)}',
+      'html.dark #xb-passkey-host .xb-pk-card,.dark #xb-passkey-host .xb-pk-card{background:#09090b;color:#fafafa;border-color:#27272a}',
+      '.xb-pk-card h3{margin:0 0 8px;font-size:15px;font-weight:650;line-height:1.3}',
+      '.xb-pk-card b{font-size:14px}',
+      '#xb-passkey-host button.xb-pk-action{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;margin:10px 0 0;padding:0 16px;border-radius:10px;border:1px solid #18181b;background:#18181b;color:#fff;font:600 15px/1 inherit;letter-spacing:0;cursor:pointer;text-align:center}',
+      'html.dark #xb-passkey-host button.xb-pk-action,.dark #xb-passkey-host button.xb-pk-action{background:#fafafa;color:#09090b;border-color:#fafafa}',
+      '#xb-passkey-host button.xb-pk-action:disabled{opacity:.55;cursor:default}',
+      '#xb-passkey-host button.xb-pk-danger{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #fca5a5;background:#fff;color:#dc2626;font:600 13px/1 inherit;cursor:pointer;flex:0 0 auto}',
+      'html.dark #xb-passkey-host button.xb-pk-danger,.dark #xb-passkey-host button.xb-pk-danger{background:#18181b;color:#fca5a5;border-color:#7f1d1d}',
       '.xb-pk-item{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dashed rgba(127,127,127,.35)}',
-      '.xb-pk-actions{display:flex;gap:8px;flex-wrap:wrap}',
-      '.xb-pk-actions button,.xb-pk-item button{cursor:pointer}',
       '.xb-pk-err{color:#dc2626;font-size:13px;margin-top:8px}'
     ].join('');
     document.head.appendChild(style);
@@ -235,18 +240,16 @@
   function renderManager(box, token) {
     box.innerHTML = '';
     var title = el('h3', null, '登录安全');
-    var head = el('div', { class: 'xb-pk-row' });
     var intro = el('div');
     intro.appendChild(el('b', null, '通行钥匙（Face ID / 触控 ID）'));
     var sub = el('div', { class: 'xb-pk-hint', style: 'text-align:left;margin:4px 0 0' });
     intro.appendChild(sub);
-    var reg = el('button', { type: 'button', class: 'xb-pk-btn', style: 'width:auto;margin:0' }, '在本机注册');
-    head.appendChild(intro);
-    head.appendChild(reg);
+    var reg = el('button', { type: 'button', class: 'xb-pk-action' }, '在本机注册');
     var list = el('div');
     var msg = el('div', { class: 'xb-pk-err' });
     box.appendChild(title);
-    box.appendChild(head);
+    box.appendChild(intro);
+    box.appendChild(reg);
     box.appendChild(list);
     box.appendChild(msg);
     box.appendChild(el('div', { class: 'xb-pk-hint', style: 'text-align:left' }, '电脑上登录时，在系统弹窗里选择手机扫码。这是通行钥匙的跨设备登录，不是两步验证二维码。密码登录仍然可用。'));
@@ -270,7 +273,7 @@
         meta.appendChild(el('b', null, c.name || 'Passkey'));
         var when = c.created ? new Date(c.created * 1000).toLocaleString() : '';
         meta.appendChild(el('div', { class: 'xb-pk-hint', style: 'text-align:left;margin:0' }, when + (c.backed_up ? ' · 已同步' : '')));
-        var del = el('button', { type: 'button' }, '删除');
+        var del = el('button', { type: 'button', class: 'xb-pk-danger' }, '删除');
         del.addEventListener('click', async function () {
           if (!confirm('确定删除这枚通行钥匙？')) return;
           try {
@@ -311,12 +314,39 @@
     load().catch(function (e) { msg.textContent = e.message || '加载失败'; });
   }
 
-  function mountManager(anchor, token, where) {
-    if (!anchor || document.querySelector('[data-xb-passkey-manage]')) return;
+  function passkeyHost() {
+    var host = document.getElementById('xb-passkey-host');
+    if (host) return host;
+    host = el('div', { id: 'xb-passkey-host' });
+    document.body.appendChild(host);
+    return host;
+  }
+
+  function reserveSpace(on) {
+    document.querySelectorAll('#root .overflow-auto.flex-1, #app').forEach(function (node) {
+      if (on) node.style.setProperty('padding-bottom', '230px', 'important');
+      else node.style.removeProperty('padding-bottom');
+    });
+  }
+
+  function clearManager() {
+    var host = document.getElementById('xb-passkey-host');
+    if (host) host.remove();
+    document.body.classList.remove('xb-pk-open');
+    reserveSpace(false);
+  }
+
+  // Keep the card outside #root / #app. Those trees are owned by React and Vue;
+  // a node inserted before 「安全设置」 is rewritten on the next render and can drop
+  // the category menu and the rest of the security form.
+  function mountManager(token) {
+    if (document.querySelector('#xb-passkey-host [data-xb-passkey-manage]')) return;
     ensureStyle();
+    var host = passkeyHost();
+    host.innerHTML = '';
     var box = el('div', { class: 'xb-pk-card', 'data-xb-passkey-manage': '1' });
-    if (where === 'before') anchor.parentNode.insertBefore(box, anchor);
-    else anchor.insertAdjacentElement('afterend', box);
+    host.appendChild(box);
+    document.body.classList.add('xb-pk-open');
     renderManager(box, token);
   }
 
@@ -329,14 +359,11 @@
       }
       if (routeIs('#/config/system/safe', '/config/system/safe')) {
         var token = readStored('Xboard_', localStorage);
-        if (!token) return;
-        var heading = null;
-        var titles = ['安全设置', 'Security Settings'];
-        document.querySelectorAll('h1,h2,h3').forEach(function (node) {
-          if (!heading && titles.indexOf((node.textContent || '').trim()) >= 0) heading = node;
-        });
-        if (heading) mountManager(heading, token, 'before');
-      }
+        if (token) {
+          mountManager(token);
+          reserveSpace(true);
+        } else clearManager();
+      } else clearManager();
       return;
     }
     if (routeIs('#/login', '/login')) {
@@ -345,16 +372,11 @@
     }
     if (routeIs('#/profile', '/profile')) {
       var userToken = readStored('Vue_Naive_', localStorage);
-      if (!userToken) return;
-      var cardTitle = null;
-      var titles = ['修改密码', 'Change Password'];
-      document.querySelectorAll('div,span,h1,h2,h3').forEach(function (node) {
-        if (!cardTitle && node.childNodes.length <= 3 && titles.indexOf((node.textContent || '').trim()) >= 0) cardTitle = node;
-      });
-      if (!cardTitle) return;
-      var card = cardTitle.closest('.n-card') || cardTitle.parentElement;
-      if (card) mountManager(card, userToken, 'after');
-    }
+      if (userToken) {
+        mountManager(userToken);
+        reserveSpace(true);
+      } else clearManager();
+    } else clearManager();
   }
 
   var scheduled = false;

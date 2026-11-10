@@ -81,7 +81,7 @@
 
 <body>
   <div id="root"></div>
-  <script src="/assets/passkey.js?v=20261110" defer></script>
+  <script src="/assets/passkey.js?v=20261110b" defer></script>
 </body>
 
 </html>
